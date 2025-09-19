@@ -60,7 +60,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: process.env.NODE_ENV === 'production' ? createWebHistory('/leki/') : createWebHistory(),
+  history: process.env.NODE_ENV === 'production' ? createWebHistory('/apteczka/') : createWebHistory(),
   routes
 })
 

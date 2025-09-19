@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/leki/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/apteczka/' : '/',
   plugins: [
     vue(),
     VitePWA({
@@ -19,8 +19,8 @@ export default defineConfig({
         background_color: '#1f2937',
         display: 'standalone',
         orientation: 'portrait',
-        scope: process.env.NODE_ENV === 'production' ? '/leki/' : '/',
-        start_url: process.env.NODE_ENV === 'production' ? '/leki/' : '/',
+        scope: process.env.NODE_ENV === 'production' ? '/apteczka/' : '/',
+        start_url: process.env.NODE_ENV === 'production' ? '/apteczka/' : '/',
         icons: [
           {
             src: 'ambulance-icon.svg',
