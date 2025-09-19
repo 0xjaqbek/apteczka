@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.email in [
+        'jaqbek.eth@gmail.com'
+      ];
+    }
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /ambulances/{ambulanceId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid in resource.data.members;
+      allow create: if request.auth != null;
+      allow read, write, delete: if isSuperAdmin();
+    }
+
+    match /ambulances/{ambulanceId}/inventory/{itemId} {
+      allow read: if request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/ambulances/$(ambulanceId)).data.members;
+      allow write: if request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/ambulances/$(ambulanceId)).data.admins;
+      allow read, write, delete: if isSuperAdmin();
+    }
+
+    match /ambulances/{ambulanceId}/activities/{activityId} {
+      allow read: if request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/ambulances/$(ambulanceId)).data.members;
+      allow create: if request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/ambulances/$(ambulanceId)).data.members;
+      allow read: if isSuperAdmin();
+    }
+  }
+}
