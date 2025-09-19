@@ -60,7 +60,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: process.env.NODE_ENV === 'production' ? createWebHashHistory() : createWebHistory(),
+  history: process.env.NODE_ENV === 'production' ? createWebHistory('/leki/') : createWebHistory(),
   routes
 })
 
