@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Dawkowania Wlewów (v2)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="number"], select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .result-box {
+            background-color: #e9f7ff;
+            border: 1px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .result-value {
+            font-size: 1.5em;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .drug-details {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            background-color: #f9f9f9;
+        }
+        .warning {
+            color: red;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid red;
+            background-color: #ffeaea;
+            border-radius: 4px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: flex-end;
+        }
+        .input-group > div {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>💊 Kalkulator Dawkowania Wlewów Ciągłych</h2>
+
+    <label for="drug-select">1. Wybierz lek:</label>
+    <select id="drug-select" onchange="updateDrugFields()">
+        <option value="noradrenaline">Noradrenalina</option>
+        <option value="adrenaline">Adrenalina</option>
+    </select>
+
+    <hr style="margin: 20px 0;">
+
+    <div id="drug-name-display"><h3>Lek: Noradrenalina</h3></div>
+    <label for="weight">Waga Pacjenta (kg):</label>
+    <input type="number" id="weight" min="1" value="70" oninput="calculateDose()">
+
+    <label for="indication">Wskazanie:</label>
+    <select id="indication" onchange="updatePurpose(this.value, document.getElementById('drug-select').value)">
+        </select>
+    <div class="drug-details">
+        <label>Cel Terapii:</label>
+        <p id="purpose-display" style="margin-top: 5px;">Zwiększenie oporu naczyniowego, podniesienie ciśnienia</p>
+    </div>
+
+    <hr style="margin: 20px 0;">
+
+    <h3>3. Instrukcja Przygotowania Roztworu</h3>
+
+    <div class="input-group">
+        <div>
+            <label for="syringe-volume">Pojemność strzykawki (ml):</label>
+            <select id="syringe-volume" onchange="calculateConcentration()">
+                <option value="50">50 ml</option>
+                <option value="20">20 ml</option>
+                <option value="10">10 ml</option>
+            </select>
+        </div>
+        <div>
+            <label for="ampoules-count">Liczba ampułek (1mg/ml):</label>
+            <input type="number" id="ampoules-count" min="1" value="4" oninput="calculateConcentration()">
+            <small id="ampoule-info">1 ampułka = 1 mg</small>
+        </div>
+    </div>
+    
+    <div class="drug-details" style="margin-top: 10px;">
+        <p>
+            **Instrukcja dla pompy:** Dodać **<span id="drug-total-mg">4</span> mg** leku (z ampułek) do strzykawki o pojemności <span id="volume-display">50</span> ml. Dopełnić do pełnej objętości strzykawki rozcieńczalnikiem.
+        </p>
+        <p>
+            **Obliczone Stężenie Roztworu:** **<span id="concentration-display" class="result-value" style="font-size: 1em; color: #333;">80</span>** $\mu \text{g}/\text{ml}$
+        </p>
+    </div>
+    
+    <hr style="margin: 20px 0;">
+
+    <h3>4. Obliczanie Dawki i Przepływu</h3>
+
+    <label for="dose-per-kg-per-min">Dawka docelowa ($\mu$g/kg/min):</label>
+    <input type="number" id="dose-per-kg-per-min" min="0.05" max="1.0" step="0.01" value="0.1" oninput="calculateDose()">
+    <small>Zakres: <span id="dose-range">0.05 - 1 µg/kg/min</span></small>
+
+    <hr style="margin: 20px 0;">
+
+    <h3>🚀 Wyniki Obliczeń (Przepływ na Pompie):</h3>
+    <div class="result-box">
+        <p>Wymagana Dawka Całkowita:</p>
+        <div class="result-value"><span id="total-dose">0.4</span> µg/min</div>
+    </div>
+    <div class="result-box" style="margin-top: 10px;">
+        <p>Przepływ na Pompie (ml/h):</p>
+        <div class="result-value"><span id="flow-rate">0.3</span> ml/h</div>
+    </div>
+
+    <div class="warning">
+        <p id="notes-display">
+            **Noradrenalina:** Dawkę dostosować indywidualnie do efektu klinicznego. Monitoruj ciśnienie.
+        </p>
+    </div>
+
+</div>
+
+<script>
+    const drugData = {
+        noradrenaline: {
+            name: "Noradrenalina",
+            ampoule_mg_per_ml: 1,
+            indications: [
+                { case: "Wstrząs septyczny", purpose: "Zwiększenie oporu naczyniowego, podniesienie ciśnienia", dose_min: 0.05, dose_max: 1 },
+                { case: "Wstrząs hipowolemiczny (oporny)", purpose: "Podniesienie ciśnienia po wyrównaniu objętości", dose_min: 0.05, dose_max: 1 },
+                { case: "Wstrząs kardiogenny", purpose: "Zwiększenie ciśnienia, wzrost oporu naczyniowego", dose_min: 0.05, dose_max: 1 }
+            ],
+            notes: "Dawkę dostosować indywidualnie do efektu klinicznego. Monitoruj ciśnienie.",
+            default_ampoules: 4, // 4 mg w 50 ml dla Noradrenaliny (wg. pierwotnej instrukcji)
+            default_dose: 0.1 // µg/kg/min
+        },
+        adrenaline: {
+            name: "Adrenalina",
+            ampoule_mg_per_ml: 1,
+            indications: [
+                { case: "Wstrząs kardiogenny z bradykardią", purpose: "Wzrost kurczliwości i częstości rytmu serca", dose_min: 0.01, dose_max: 0.5 },
+                { case: "Bradykardia (Wlew Ciągły)", purpose: "Zwiększenie częstości rytmu serca", dose_min: 0.01, dose_max: 0.5 }
+            ],
+            notes: "Dawkowanie zależy od wskazań i masy ciała. Monitoruj parametry życiowe. **UWAGA: To są dawki dla wlewu ciągłego, nie dla bolusów!**",
+            default_ampoules: 3, // 3 mg w 50 ml dla Adrenaliny (wg. pierwotnej instrukcji)
+            default_dose: 0.05 // µg/kg/min
+        }
+    };
+
+    // Elementy interfejsu
+    const drugSelect = document.getElementById('drug-select');
+    const weightInput = document.getElementById('weight');
+    const indicationSelect = document.getElementById('indication');
+    const doseInput = document.getElementById('dose-per-kg-per-min');
+    const syringeVolumeSelect = document.getElementById('syringe-volume');
+    const ampoulesCountInput = document.getElementById('ampoules-count');
+    
+    const purposeDisplay = document.getElementById('purpose-display');
+    const doseRangeDisplay = document.getElementById('dose-range');
+    const totalDoseDisplay = document.getElementById('total-dose');
+    const flowRateDisplay = document.getElementById('flow-rate');
+    const drugNameDisplay = document.getElementById('drug-name-display');
+    const concentrationDisplay = document.getElementById('concentration-display');
+    const notesDisplay = document.getElementById('notes-display');
+    const drugTotalMgDisplay = document.getElementById('drug-total-mg');
+    const volumeDisplay = document.getElementById('volume-display');
+
+    let currentConcentration_ug_per_ml = 0; // Globalne stężenie w µg/ml
+
+    // Funkcja aktualizująca stężenie roztworu
+    function calculateConcentration() {
+        const drugKey = drugSelect.value;
+        const drug = drugData[drugKey];
+        const volumeMl = parseFloat(syringeVolumeSelect.value);
+        const ampoulesCount = parseInt(ampoulesCountInput.value);
+
+        if (isNaN(volumeMl) || isNaN(ampoulesCount) || volumeMl <= 0 || ampoulesCount <= 0) {
+            concentrationDisplay.textContent = 'Brak danych';
+            return;
+        }
+
+        // Całkowita masa leku w roztworze (mg)
+        const totalDrugMg = ampoulesCount * drug.ampoule_mg_per_ml;
+        
+        // Całkowita masa leku w roztworze (µg)
+        const totalDrugUg = totalDrugMg * 1000;
+
+        // Obliczenie stężenia w µg/ml
+        currentConcentration_ug_per_ml = totalDrugUg / volumeMl;
+
+        // Aktualizacja wyświetlania instrukcji
+        drugTotalMgDisplay.textContent = totalDrugMg;
+        volumeDisplay.textContent = volumeMl;
+        concentrationDisplay.textContent = currentConcentration_ug_per_ml.toFixed(2);
+        
+        // Ponowne przeliczenie dawki po zmianie stężenia
+        calculateDose();
+    }
+
+    // Funkcja aktualizująca pola po zmianie leku
+    function updateDrugFields() {
+        const selectedDrugKey = drugSelect.value;
+        const drug = drugData[selectedDrugKey];
+        
+        // 1. Nazwa i notatki
+        drugNameDisplay.innerHTML = `<h3>Lek: ${drug.name}</h3>`;
+        notesDisplay.innerHTML = `**${drug.name}:** ${drug.notes}`;
+        ampoulesCountInput.value = drug.default_ampoules; // Ustaw domyślną liczbę ampułek
+
+        // 2. Lista wskazań
+        indicationSelect.innerHTML = '';
+        drug.indications.forEach((ind, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = ind.case;
+            indicationSelect.appendChild(option);
+        });
+
+        // 3. Zakres dawkowania
+        const firstIndication = drug.indications[0];
+        doseRangeDisplay.textContent = `${firstIndication.dose_min} - ${firstIndication.dose_max} µg/kg/min`;
+        doseInput.min = firstIndication.dose_min;
+        doseInput.max = firstIndication.dose_max;
+        doseInput.value = drug.default_dose;
+        doseInput.step = 0.01; // Ustawienie kroku dla wygody
+
+        // 4. Cel i obliczenia
+        updatePurpose(0, selectedDrugKey);
+        calculateConcentration(); // Oblicz stężenie na podstawie domyślnej liczby ampułek
+    }
+
+    // Funkcja aktualizująca cel po zmianie wskazania
+    function updatePurpose(index, drugKey) {
+        const drug = drugData[drugKey];
+        const indication = drug.indications[index];
+        purposeDisplay.textContent = indication.purpose;
+
+        // Aktualizacja zakresu dawkowania dla wybranego wskazania
+        doseRangeDisplay.textContent = `${indication.dose_min} - ${indication.dose_max} µg/kg/min`;
+        doseInput.min = indication.dose_min;
+        doseInput.max = indication.dose_max;
+        
+        // Upewnienie się, że aktualna dawka mieści się w nowym zakresie
+        const currentDose = parseFloat(doseInput.value);
+        if (currentDose < indication.dose_min || currentDose > indication.dose_max) {
+             doseInput.value = drug.default_dose;
+        }
+        
+        calculateDose();
+    }
+
+    // Główna funkcja obliczeniowa
+    function calculateDose() {
+        const weight = parseFloat(weightInput.value);
+        const dosePerKgPerMin = parseFloat(doseInput.value);
+        const concentration = currentConcentration_ug_per_ml;
+
+        if (isNaN(weight) || weight <= 0 || isNaN(dosePerKgPerMin) || dosePerKgPerMin <= 0 || concentration <= 0) {
+            totalDoseDisplay.textContent = 'Brak Danych';
+            flowRateDisplay.textContent = 'Brak Danych';
+            return;
+        }
+
+        // Krok 1: Obliczenie całkowitej dawki w µg/min
+        const totalDoseUgPerMin = dosePerKgPerMin * weight;
+
+        // Krok 2: Obliczenie przepływu w ml/h
+        // Wzór: Przepływ (ml/h) = [ Dawka (µg/min) * 60 min/h ] / Stężenie (µg/ml)
+        const flowRateMlPerHour = (totalDoseUgPerMin * 60) / concentration;
+
+        // Wyświetlanie wyników
+        totalDoseDisplay.textContent = totalDoseUgPerMin.toFixed(2);
+        flowRateDisplay.textContent = flowRateMlPerHour.toFixed(2);
+    }
+
+    // Inicjalizacja przy ładowaniu strony
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDrugFields();
+    });
+</script>
+
+</body>
+</html>
